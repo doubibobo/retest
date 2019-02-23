@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="col-xs-6 col-xs-offset-3">
+        <form class="form-horizontal col-md-offset-0" id="test_form" name="login_form">
+          <div class="form-group">
+            <label for="type" class="col-sm-4 control-label">题目类型</label>
+            <div class="col-sm-8">
+              <select class="form-control" id="type" name="type">
+                  <option value="0">第一类</option>
+                  <option value="1">第二类</option>
+                  <option value="2">第三类</option>
+                  <option value="3">第四类</option>
+                  <option value="4">第五类</option>
+                </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="content" class="col-sm-4 control-label">题目内容</label>
+            <div class="col-sm-8">
+                <textarea  class="form-control" id="content" placeholder="题目内容" name="content"></textarea>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-12">
+              <button type="submit" class="btn btn-info" name="choose" id="adding">添加</button>
+            </div>
+          </div>
+        </form>
+    </div>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+    <script type="text/javascript">
+        function adding() {
+            $.ajax({
+                //几个参数需要注意一下
+                type: "POST",       //方法类型
+                dataType: "json",   //预期服务器返回的数据类型
+                url: "/insert" ,//url
+                data: $('#test_form').serialize(),
+                success: function (result) {
+                    console.log(result);//打印服务端返回的数据(调试用)
+                    if (result.status === 200) {
+                        alert("插入试题成功！");
+                    }
+                },
+                error : function() {
+                    alert("插入试题失败！");
+                }
+            });
+        }
+        document.getElementById("adding").onclick = adding;
+    </script>
+{% endblock %}

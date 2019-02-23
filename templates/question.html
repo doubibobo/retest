@@ -1,30 +1,270 @@
 {% extends 'base.html' %}
 
-{% block page_content %}
-    <div class="page-header">
-        <h1>请选择要抽取的题目</h1>
-    </div>
+{% block content %}
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
+{##}
+{#    <div class="col-xs-12 page-header">#}
+{#      <h2 class="col-xs-offset-4">请选择要抽取的题目</h2>#}
+{#    </div>#}
 
-    <div class="page-middle">
-        <form class="form-horizontal">
+    <div class="col-xs-4" id="left_high_input">
+        <h2 class="col-xs-offset-4">请输入基本信息</h2>
+        <div class="bs-example bs-example-standalone col-xs-12" data-example-id="dismissible-alert-js" id="alert_div">
+          <div class="alert alert-warning alert-dismissible fade in" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+          <strong id="message">请填写相关信息</strong>
+        </div>
+        </div>
+        <form class="form-horizontal col-md-offset-0" id="test_form" name="test_form">
           <div class="form-group">
-            <label for="inputEmail3" class="col-sm-2 control-label">考生号</label>
-            <div class="col-sm-10">
-              <input type="email" class="form-control" id="inputEmail3" placeholder="Email">
+            <label for="inputEmail3" class="col-sm-4 control-label">考生号</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="inputEmail3" placeholder="考生号" name="test_number">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inputEmail4" class="col-sm-4 control-label">考生姓名</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="inputEmail4" placeholder="考生姓名" name="test_name">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inputType" class="col-sm-4 control-label">考生类型</label>
+            <div class="col-sm-8">
+              <select class="form-control" id="inputType" name="test_type">
+                  <option value="学硕">学硕</option>
+                  <option value="专硕">专硕</option>
+                </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inputPassword3" class="col-sm-4 control-label">考场号</label>
+            <div class="col-sm-8">
+              <select class="form-control" id="inputPassword3" name="test_room">
+                  <option value="A">A考场</option>
+                  <option value="B">B考场</option>
+                  <option value="C">C考场</option>
+                  <option value="D">D考场</option>
+                  <option value="E">E考场</option>
+                  <option value="F">F考场</option>
+                  <option value="G">G考场</option>
+                </select>
             </div>
           </div>
           <div class="form-group">
-            <label for="inputPassword3" class="col-sm-2 control-label">考场号</label>
-            <div class="col-sm-10">
-              <input type="password" class="form-control" id="inputPassword3" placeholder="Password">
+            <label for="inputPassword4" class="col-sm-4 control-label">考场内编号（座号）</label>
+            <div class="col-sm-8">
+              <select class="form-control" id="inputPassword4" name="test_location">
+                  {% for x in range(1,30) %}
+                    <option value="{{ x }}">{{ x }}</option>
+                  {% endfor %}
+                </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inputEmail5" class="col-sm-4 control-label">试题编号</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="inputEmail5" placeholder="请点击下方按钮以选题"  name="paper_number">
             </div>
           </div>
           <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
-              <button type="submit" class="btn btn-default">Sign in</button>
+            <div class="col-sm-offset-4 col-sm-12">
+              <button type="submit" class="btn btn-info" name="choose" id="choose">选定题目</button>
             </div>
           </div>
         </form>
-        <button type="button" class="btn btn-info">一般信息</button>
     </div>
+
+    <div class="col-xs-7 text-center">
+      <div class="bs-example" data-example-id="contextual-table">
+          <table class="table table-bordered">
+            <thead>
+              <tr class="text-center">
+                <th>#</th>
+                  {% for y in range(1,13) %}
+                    <th class="info">{{ y }}</th>
+                  {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+            {% for x in range(1, 17) %}
+              <tr class="active">
+                <th scope="row">{{ x }}</th>
+                  {% for y in range(1,13) %}
+                      <td class="info"><button type="button" class="btn btn-success col-xs-12" id="paper_number{{ 12*(x-1)+y }}" value="{{ 12*(x-1)+y }}">第{{ 12*(x-1)+y }}套</button></td>
+                  {% endfor %}
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+    </div>
+
+    {# 表单验证相关信息 #}
+    <script type="text/javascript">
+        {#表单验证#}
+        let test_number = document.getElementById("inputEmail3");
+        let test_name = document.getElementById("inputEmail4");
+        let paper_number = document.getElementById("inputEmail5");
+        let message = document.getElementById("message");
+        let alert_div = document.getElementById("alert_div");
+
+        function test_number_check() {
+            // 验证考生号
+            if (test_number.value === "") {
+                message.innerHTML = "考生号不能为空";
+                alert_div.style.visibility = "visible";
+                return false;
+            }
+            if (test_number.value.length < 7 || test_number.value.length > 7) {
+                message.innerHTML  = "考生号长度为11位";
+                alert_div.style.visibility = "visible";
+                return false;
+            }
+            return true;
+        }
+
+        function test_name_check() {
+            if (test_name.value === "") {
+                message.innerHTML = "考生姓名不能为空";
+                alert_div.style.visibility = "visible";
+                return false;
+            }
+            return true;
+        }
+
+        function paper_number_check() {
+            if (paper_number.value === "") {
+                message.innerHTML = "试卷编号不能为空";
+                alert_div.style.visibility = "visible";
+                return false;
+            }
+            return true;
+        }
+
+        function check() {
+            if (test_number_check()) {
+                if (test_name_check()) {
+                    return paper_number_check();
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+
+        function student_find() {
+            let student_name;
+
+            let username_input = {
+                data: JSON.stringify({
+                    "tester" : document.getElementById("inputEmail3").value
+                })
+            };
+
+            $.ajax({
+                //几个参数需要注意一下
+                type: "POST",       //方法类型
+                dataType: "json",   //预期服务器返回的数据类型
+                url: "/find/tester" ,//url
+                data: username_input,
+                success: function (result) {
+                    console.log(result);//打印服务端返回的数据(调试用)
+                    if (result.status === 200) {
+                        student_name = result.list;
+                        if (student_name[0] !== undefined) {
+                            document.getElementById("inputEmail4").value = student_name[0].test_name;
+                            document.getElementById("inputType").value = student_name[0].test_type;
+                        } else {
+                            document.getElementById("inputEmail4").value = "";
+                            document.getElementById("inputType").value = "学硕";
+                        }
+                    }
+                },
+                error : function() {
+
+                }
+            });
+        }
+
+        window.onload = function () {
+            document.getElementById("inputEmail3").oninput = student_find;
+            document.getElementById("inputEmail3").onmouseover = test_number_check;
+            document.getElementById("inputEmail4").onmouseover = test_name_check;
+            document.getElementById("inputEmail5").onmouseover = paper_number_check;
+        };
+    </script>
+
+    <script type="text/javascript">
+        function choose() {
+            let choose_input = {
+                data: JSON.stringify({
+                    "test_room" : document.getElementById("inputPassword3").value,
+                    "test_number" : document.getElementById("inputEmail3").value,
+                    "paper_number": document.getElementById("inputEmail5").value,
+                    "test_location": document.getElementById("inputPassword4").value
+                })
+            };
+
+            $.ajax({
+                type: "POST",
+                dataType: "json",                  //服务器返回的数据类型
+                url: "/question" ,
+                data: choose_input,
+                success: function (result) {
+                    if (result.status === 200) {
+                        window.load.href = "/";
+                    }
+                },
+                error : function() {
+                    alert("选题失败");
+                }
+           });
+        }
+
+        function check_and_choose() {
+            if (check()) {
+                alert("验证成功！")
+                choose();
+            } else {
+                alert("验证失败")
+            }
+        }
+        console.log(document.getElementById("choose").name);
+        document.getElementById("choose").onclick = check_and_choose;
+    </script>
+
+    <script type="text/javascript">
+        {# 设置弹出框为隐藏 #}
+        {#document.getElementById("alert_div").style.display = "none";#}
+        document.getElementById("alert_div").style.visibility = "hidden";
+        document.getElementById("inputEmail4").readonly = true;
+        document.getElementById("inputEmail4").disabled = true;
+        document.getElementById("inputEmail5").readonly = true;
+        document.getElementById("inputEmail5").disabled = true;
+        document.getElementById("inputType").readonly = true;
+        document.getElementById("inputType").disabled = true;
+
+        {# 首先根据题目选定状态更改类 #}
+        document.getElementById("paper_number1").className = "btn btn-danger col-xs-12";
+        document.getElementById("paper_number1").disabled = true;
+
+        document.getElementById("left_high_input").position = "absolute";
+        document.getElementById("left_high_input").top = 0;
+
+        {# 设置右侧按钮的onclick事件，根据点击的按钮填入input信息 #}
+        for (let i = 1; i <= 200; i++) {
+            let paper_number_value = document.getElementById("paper_number" + i).value;
+            document.getElementById("paper_number" + i).onclick = function () {
+                document.getElementById("inputEmail5").value = paper_number_value;
+            };
+        }
+    </script>
+
 {% endblock %}

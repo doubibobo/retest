@@ -59,19 +59,6 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-
-hs_err_pid*
-*rdb
-LICENSE
-
-# sql files
-Sheep.tar.xz
-Sheep/
-
-# c files
-*.c
-
 venv/
 
 __pycache__/

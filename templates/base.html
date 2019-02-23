@@ -2,26 +2,39 @@
 
 {% block title %}华中农业大学食品科学与技术学院研究生考试复试系统{% endblock %}
 
+{% block styles %}
+{{super()}}
+<link rel="stylesheet"
+      href="{{url_for('.static', filename='css/base.css')}}">
+{% endblock %}
+
 {% block navbar %}
-    <nav class="navbar navbar-inverse">
+    <nav class="navbar navbar-inverse" id="navbar_test_paper">
         <div class="container-fluid">
-            <div class="navbar-header">
+            <div class="navbar-header" id="navbar-id">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
                     <span class="sr-only">Toggle navigation</span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="/">华中农业大学食品科学与技术学院研究生考试复试系统</a>
+{#                <a class="navbar-brand" href="#">#}
+{#                    <img class="logo" alt="Brand" src="img/index.jpg">#}
+{#                </a>#}
+                <a class="navbar-brand" href="">研究生考试复试系统</a>
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a href="/">题目录入</a></li>
-                    <li><a href="/">试卷组合</a></li>
-                    <li><a href="/">考生抽题</a></li>
-                    <li><a href="/">考官登录</a></li>
+                    <li><a href="/insert">题目录入</a></li>
+                    <li><a href="">试卷组合</a></li>
+                    <li><a href="/question">考生抽题</a></li>
+                    {% if current_user.is_authenticated %}
+                        <li><a href="">欢迎 {{ current_user.get_id() }} </a></li>
+                        <li><a href="/logout">退出</a></li>
+                    {% endif %}
                 </ul>
             </div>
+
         </div>
     </nav>
 {% endblock %}
