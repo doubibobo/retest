@@ -1,13 +1,17 @@
 import json
 import os
+import platform
 import random
+from typing import Optional, List, Any, Union, Tuple
 
+from dominate import document
 from flask import render_template, request, current_app, jsonify, session
 from flask import Flask
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
 import pymysql
 from flask_session import Session
+from mailmerge import MailMerge
 
 app = Flask(__name__)
 
@@ -56,9 +60,9 @@ class Database:
     def list_chose(self):
         self.cur.execute("select test_student.id, test_type, test_id, test_name, test_room, test_number, test_paper, "
                          "paper_question, paper_flag "
-                         "from test_paper, test_student "
-                         "where test_student.test_paper = test_paper.id "
-                         "order by test_room asc")
+                         "from test_paper right join test_student "
+                         "on test_student.test_paper = test_paper.id "
+                         "order by test_room,test_type asc")
         result = self.cur.fetchall()
         return result
 
@@ -102,18 +106,38 @@ class Database:
             cou += 1
 
     # 根据学生的准考证号和抽取到的试题编号汇总学生的信息
-    def student_information(self, student_id, paper_id, test_room, test_number):
+    def student_information(self, student_id, paper_id, test_room, test_number, test_name, test_type):
+
+        """ 判断考生选取的题目是否可选，判断考生是否已经选题
+        """
+        print(paper_id + " " + student_id)
+        self.cur.execute("select paper_flag from test_paper where id = " + paper_id)
+        is_choose_message = self.cur.fetchall()
+        print(is_choose_message)
+        if is_choose_message[0]['paper_flag'] == 1:
+            return None
+
+        self.cur.execute("select test_paper from test_student where test_id = '" + student_id + "'")
+        is_student_choose_message = self.cur.fetchall()
+        print(is_student_choose_message)
+        if is_student_choose_message[0]['test_paper'] != 0:
+            return None
+
         """ 根据考生抽取到的题号更新考生表
             如果sql语句中的条件值是变量，变量要定义成str类型，在sql语句中用'"+s+"'表示
+            更新题目的状态
         """
         update = "update test_student set test_paper = '" + paper_id + "', test_room = '" \
                  + test_room + "', test_number = '" + test_number + "' where test_id='" + student_id + "' "
         self.cur.execute(update)
         self.con.commit()
 
+        paper_update = "update test_paper set paper_flag = 1 where id = " + paper_id
+        self.cur.execute(paper_update)
+        self.con.commit()
+
         """根据题号到试卷表中找到该套题包含了哪些题目"""
         paper_content = "select paper_question from test_paper where id= " + paper_id
-        print(paper_content)
         self.cur.execute(paper_content)
         content = self.cur.fetchall()
         question = content[0]
@@ -139,8 +163,51 @@ class Database:
             sql = "select question_content from test_question where id ='" + i + "' "
             self.cur.execute(sql)
             content = self.cur.fetchall()
-            Q.append(content)
+            Q.append(content[0])
+
+        # 将选题信息写入word文档
+
+        print(Q)
+
+        print(Q[0]['question_content'])
+        doxManagement = DoxManagement()
+        doxManagement.born_word(test_name, test_type, test_number,
+                                Q[0]['question_content'], Q[1]['question_content'], Q[2]['question_content'],
+                                Q[3]['question_content'], Q[4]['question_content'],
+                                student_id)
         return Q
+
+    def paper_list_information(self):
+        sql = "select id, paper_flag from test_paper"
+        self.cur.execute(sql)
+        content = self.cur.fetchall()
+        return content
+
+
+class DoxManagement:
+
+    def __init__(self):
+        print(platform.system())
+        self.path = os.path.abspath('.') + "\static\word"
+        self.template = "test_template.docx"
+        self.document_1 = MailMerge(self.template)
+
+    # 文档生成
+    def born_word(self, student_name, student_type, room_number,
+                  question_1, question_2, question_3, question_4, question_5,
+                  student_number):
+        print("Fields included in {}: {}".format(self.template, self.document_1.get_merge_fields()))
+        self.document_1.merge(
+            test_name=student_name,
+            test_type=student_type,
+            test_number=room_number,
+            question_1=question_1,
+            question_2=question_2,
+            question_3=question_3,
+            question_4=question_4,
+            question_5=question_5
+        )
+        self.document_1.write(self.path + '\paper-' + student_number + '.docx')
 
 
 class User(UserMixin):
@@ -196,6 +263,15 @@ def favicon():
 def get_picture(picture):
     print(picture)
     return current_app.send_static_file("img/" + picture)
+
+
+# 下载试卷接口
+@app.route('/download/<paper>', methods=['GET'])
+@login_required
+def paper_download(paper):
+    print(paper)
+    print("word/paper/" + paper + ".docx")
+    return current_app.send_static_file("word/paper-" + paper + ".docx")
 
 
 @app.errorhandler(404)
@@ -265,17 +341,62 @@ def find_tester():
 def retest_question():
     if request.method == "POST":
         login_message = json.loads(request.form.get("data"))
+        # 考生号
         test_number = login_message['test_number']
+        # 考场号
         test_room = login_message['test_room']
+        # 座号
         test_location = login_message['test_location']
+        # 选题
         paper_number = login_message['paper_number']
+        # 姓名
+        test_name = login_message['test_name']
+        # 类型
+        test_type = login_message['test_type']
+
+        database = Database()
+        result: Optional[List[Union[Tuple, Any]]] = database.student_information(test_number, paper_number, test_room,
+                                                                                 test_location,
+                                                                                 test_name, test_type)
+
+        print(result)
+        if result is None:
+            return jsonify({
+                "status": 300,
+                "error": "考生已经选过题目或该题目已被选"
+            })
+        else:
+            return jsonify({
+                "status": 200,
+                "lists": result
+            })
+    return render_template('question.html')
+
+
+# 考生选题展示页面
+@app.route('/list', methods=["GET", "POST"])
+@login_required
+def list_student():
+    if request.method == "POST":
         database = Database()
         results = jsonify({
             "status": 200,
-            "lists": database.student_information(test_number, paper_number, test_room, test_location)
+            "lists": database.list_chose()
         })
         return results
-    return render_template('question.html')
+    return render_template('list.html')
+
+
+# 获得所有题目的状态信息
+@app.route('/paper', methods=['GET'])
+@login_required
+def list_paper_message():
+    database = Database()
+    results = jsonify({
+        "status": 200,
+        "lists": database.paper_list_information()
+    })
+    return results
 
 
 # 技术人员添加一道题目

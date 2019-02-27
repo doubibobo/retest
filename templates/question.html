@@ -3,10 +3,6 @@
 {% block content %}
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
-{##}
-{#    <div class="col-xs-12 page-header">#}
-{#      <h2 class="col-xs-offset-4">请选择要抽取的题目</h2>#}
-{#    </div>#}
 
     <div class="col-xs-4" id="left_high_input">
         <h2 class="col-xs-offset-4">请输入基本信息</h2>
@@ -74,15 +70,15 @@
           </div>
           <div class="form-group">
             <div class="col-sm-offset-4 col-sm-12">
-              <button type="submit" class="btn btn-info" name="choose" id="choose">选定题目</button>
+              <button type="button" class="btn btn-info" name="choose" id="choose">选定题目</button>
             </div>
           </div>
         </form>
     </div>
 
-    <div class="col-xs-7 text-center">
-      <div class="bs-example" data-example-id="contextual-table">
-          <table class="table table-bordered">
+    <div class="col-xs-8 text-center">
+      <div class="bs-example table-responsive" data-example-id="contextual-table">
+          <table class="table table-bordered table-responsive">
             <thead>
               <tr class="text-center">
                 <th>#</th>
@@ -91,15 +87,7 @@
                   {% endfor %}
               </tr>
             </thead>
-            <tbody>
-            {% for x in range(1, 17) %}
-              <tr class="active">
-                <th scope="row">{{ x }}</th>
-                  {% for y in range(1,13) %}
-                      <td class="info"><button type="button" class="btn btn-success col-xs-12" id="paper_number{{ 12*(x-1)+y }}" value="{{ 12*(x-1)+y }}">第{{ 12*(x-1)+y }}套</button></td>
-                  {% endfor %}
-              </tr>
-            {% endfor %}
+            <tbody id="tbody_list">
             </tbody>
           </table>
         </div>
@@ -198,6 +186,62 @@
             document.getElementById("inputEmail3").onmouseover = test_number_check;
             document.getElementById("inputEmail4").onmouseover = test_name_check;
             document.getElementById("inputEmail5").onmouseover = paper_number_check;
+            {# 更新右侧试卷列表信息 #}
+            var tbody = document.getElementById("tbody_list");
+            $.ajax({
+                type: "GET",
+                dataType: "json",                  //服务器返回的数据类型
+                url: "/paper" ,
+                success: function (result) {
+                    if (result.status === 200) {
+                        {#print("题目状态获取成功！");#}
+                        let str = "";
+                        let danger_class = "btn btn-danger col-xs-12";
+                        let success_class = "btn btn-success col-xs-12";
+
+                        console.log(result);
+                        console.log(result.lists.length);
+                        console.log("进行到这里了");
+
+                        {# 填充右侧题目区域 #}
+                        let count = 1;
+                        for (let i = 1; count <= result.lists.length; i++) {
+                           str += "<tr class='active'>" +
+                                "       <th scope='row'>" + i + "</th>";
+                           for (let j = 1; j <= 12 && count <= result.lists.length; j++) {
+                               str += "<td class='info'>";
+                               let number = result.lists[(i-1)*12 + j - 1].id;
+                               if (result.lists[(i-1)*12 + j - 1].paper_flag === 1) {
+                                   str += "<button type='button' class='" + danger_class + "' id='paper_number" + number + "' value='" + number + "' disabled='disabled'>第" + number + "套</button>";
+                               } else {
+                                   str += "<button type='button' class='" + success_class + "' id='paper_number" + number + "' value='" + number + "'>第" + number + "套</button>";
+                               }
+                               console.log("number = " + number);
+                               str += "</td>";
+                               count++;
+                           }
+                           str += "   </tr>";
+                        }
+                        tbody.innerHTML = str;
+                        console.log("进行到这里了");
+                        {# 设置右侧按钮的onclick事件，根据点击的按钮填入input信息 #}
+                        for (let i = 1; i <= result.lists.length; i++) {
+                            console.log("i = " + i);
+                            let paper_number_value = document.getElementById("paper_number" + result.lists[i-1].id).value;
+                            console.log(document.getElementById("paper_number" + result.lists[i-1].id));
+                            console.log("paper_number_value = " + paper_number_value);
+                            document.getElementById("paper_number" + i).onclick = function () {
+                                document.getElementById("inputEmail5").value = paper_number_value;
+                            };
+                        }
+                    } else {
+                        {#print("题目状态获取失败！");#}
+                    }
+                },
+                error : function() {
+                    alert("服务器错误，题目状态获取失败！");
+                }
+           });
         };
     </script>
 
@@ -208,7 +252,9 @@
                     "test_room" : document.getElementById("inputPassword3").value,
                     "test_number" : document.getElementById("inputEmail3").value,
                     "paper_number": document.getElementById("inputEmail5").value,
-                    "test_location": document.getElementById("inputPassword4").value
+                    "test_location": document.getElementById("inputPassword4").value,
+                    "test_type": document.getElementById("inputType").value,
+                    "test_name": document.getElementById("inputEmail4").value
                 })
             };
 
@@ -219,7 +265,12 @@
                 data: choose_input,
                 success: function (result) {
                     if (result.status === 200) {
-                        window.load.href = "/";
+                        {#window.open("localhost:5000/download/" + document.getElementById("inputEmail3").value, "_blank");#}
+                        alert("选题成功！");
+                        console.log(result.lists);
+                        window.location.href = "/question";
+                    } else {
+                        alert(result.error)
                     }
                 },
                 error : function() {
@@ -230,7 +281,6 @@
 
         function check_and_choose() {
             if (check()) {
-                alert("验证成功！")
                 choose();
             } else {
                 alert("验证失败")
@@ -241,7 +291,12 @@
     </script>
 
     <script type="text/javascript">
+
+        document.getElementById("left_high_input").position = "absolute";
+        document.getElementById("left_high_input").top = 0;
+
         {# 设置弹出框为隐藏 #}
+
         {#document.getElementById("alert_div").style.display = "none";#}
         document.getElementById("alert_div").style.visibility = "hidden";
         document.getElementById("inputEmail4").readonly = true;
@@ -249,22 +304,9 @@
         document.getElementById("inputEmail5").readonly = true;
         document.getElementById("inputEmail5").disabled = true;
         document.getElementById("inputType").readonly = true;
-        document.getElementById("inputType").disabled = true;
 
         {# 首先根据题目选定状态更改类 #}
-        document.getElementById("paper_number1").className = "btn btn-danger col-xs-12";
-        document.getElementById("paper_number1").disabled = true;
-
-        document.getElementById("left_high_input").position = "absolute";
-        document.getElementById("left_high_input").top = 0;
-
-        {# 设置右侧按钮的onclick事件，根据点击的按钮填入input信息 #}
-        for (let i = 1; i <= 200; i++) {
-            let paper_number_value = document.getElementById("paper_number" + i).value;
-            document.getElementById("paper_number" + i).onclick = function () {
-                document.getElementById("inputEmail5").value = paper_number_value;
-            };
-        }
+        document.getElementById("inputType").disabled = true;
     </script>
 
 {% endblock %}

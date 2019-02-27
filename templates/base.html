@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block navbar %}
-    <nav class="navbar navbar-inverse" id="navbar_test_paper">
+    <nav class="navbar navbar-inverse col-xs-12" id="navbar_test_paper">
         <div class="container-fluid">
             <div class="navbar-header" id="navbar-id">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -28,6 +28,7 @@
                     <li><a href="/insert">题目录入</a></li>
                     <li><a href="">试卷组合</a></li>
                     <li><a href="/question">考生抽题</a></li>
+                    <li><a href="/list">考生选题</a></li>
                     {% if current_user.is_authenticated %}
                         <li><a href="">欢迎 {{ current_user.get_id() }} </a></li>
                         <li><a href="/logout">退出</a></li>

@@ -5,4 +5,13 @@
 	color:#FFFFFF;
 }
 
+.table tbody tr td{
+	vertical-align: middle;
+	text-align: center;
+}
+
+.row tr th{
+	vertical-align: middle;
+	text-align: center;
+}
 
