@@ -1,17 +1,23 @@
-import json
 import os
 import platform
+import pymysql
+import json
 import random
-from typing import Optional, List, Any, Union, Tuple
+import pythoncom
+import gevent
 
-from dominate import document
-from flask import render_template, request, current_app, jsonify, session
+from concurrent.futures import ThreadPoolExecutor
+
+from flask import copy_current_request_context
 from flask import Flask
+from flask import render_template, request, current_app, jsonify
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
-import pymysql
 from flask_session import Session
+
 from mailmerge import MailMerge
+from typing import Optional, List, Any, Union, Tuple
+from win32com import client
 
 app = Flask(__name__)
 
@@ -46,23 +52,49 @@ class Database:
             host=host, user=user, password=password, db=db, cursorclass=pymysql.cursors.DictCursor)
         self.cur = self.con.cursor()
 
+    # 添加学生信息
+    def student_adding(self, student_id, name, student_type):
+        # 查询该考生是否已经录入，以考生号为准
+        select_sql = "select count(id) as number from test_student where test_id = " + student_id
+        message = self.cur.fetchall()
+        if message[0]['number'] == 1:
+            print("重复添加")
+            return 300
+        sql = "insert into test_student(test_id, test_name,test_type) values ('" + student_id + "','" + name + "','" + student_type + "')"
+        self.cur.execute(sql)
+        self.con.commit()
+        return 200
+
+    # 查询学生总数
+    def count_students(self):
+        sql = "select count(test_id) as number from" \
+              " test_student order by test_id"
+        self.cur.execute(sql)
+        result = self.cur.fetchall()
+        return result[0]['number']
+
     # 列出学生信息
-    def list_students(self, test_card):
+    def list_students(self, start, size, test_card):
         if test_card is None:
-            sql = "select test_id, test_name, test_type, test_room, test_number from test_student"
+            sql = "select test_id, test_name, test_type, test_room, test_number from" \
+                  " test_student order by test_id limit %s, %s" % (start, size)
+            print(sql)
         else:
-            sql = "select test_name, test_type from test_student where test_id = \'" + test_card + "\'"
+            sql = "select test_id, test_type from test_student where test_name = '" + test_card + "\'"
         self.cur.execute(sql)
         result = self.cur.fetchall()
         return result
 
     # 查看所有考生的选题信息
     def list_chose(self):
-        self.cur.execute("select test_student.id, test_type, test_id, test_name, test_room, test_number, test_paper, "
-                         "paper_question, paper_flag "
-                         "from test_paper right join test_student "
-                         "on test_student.test_paper = test_paper.id "
-                         "order by test_room,test_type asc")
+        self.cur.execute("select test_student.test_id, test_student.test_name, test_student.test_type, "
+                         "test_student.test_room, test_student.test_number, "
+                         "test_student.test_paper1, test_paper.paper_question as paper1_question, "
+                         "test_student.test_paper2, a.paper_question as paper2_question "
+                         "from (select * from test_paper) as a "
+                         "right join test_student on test_paper2 = a.id "
+                         "left join test_paper on test_paper1 = test_paper.id "
+                         "order by test_room asc;")
         result = self.cur.fetchall()
         return result
 
@@ -100,42 +132,13 @@ class Database:
             e = random.randint(11, 12)
             s = str(a) + ";" + str(b) + ";" + str(c) + ";" + str(d) + ";" + str(e)
             # print(s)
-            sql = "INSERT INTO test_paper(paper_question,paper_flag) VALUES('" + s + "',0)"
+            sql = "INSERT INTO test_paper(paper_question, paper_flag) VALUES('" + s + "',0)"
             self.cur.execute(sql)
             self.con.commit()
             cou += 1
 
-    # 根据学生的准考证号和抽取到的试题编号汇总学生的信息
-    def student_information(self, student_id, paper_id, test_room, test_number, test_name, test_type):
-
-        """ 判断考生选取的题目是否可选，判断考生是否已经选题
-        """
-        print(paper_id + " " + student_id)
-        self.cur.execute("select paper_flag from test_paper where id = " + paper_id)
-        is_choose_message = self.cur.fetchall()
-        print(is_choose_message)
-        if is_choose_message[0]['paper_flag'] == 1:
-            return None
-
-        self.cur.execute("select test_paper from test_student where test_id = '" + student_id + "'")
-        is_student_choose_message = self.cur.fetchall()
-        print(is_student_choose_message)
-        if is_student_choose_message[0]['test_paper'] != 0:
-            return None
-
-        """ 根据考生抽取到的题号更新考生表
-            如果sql语句中的条件值是变量，变量要定义成str类型，在sql语句中用'"+s+"'表示
-            更新题目的状态
-        """
-        update = "update test_student set test_paper = '" + paper_id + "', test_room = '" \
-                 + test_room + "', test_number = '" + test_number + "' where test_id='" + student_id + "' "
-        self.cur.execute(update)
-        self.con.commit()
-
-        paper_update = "update test_paper set paper_flag = 1 where id = " + paper_id
-        self.cur.execute(paper_update)
-        self.con.commit()
-
+    # 查询每套题的具体题目
+    def paper_list_everyone(self, paper_id):
         """根据题号到试卷表中找到该套题包含了哪些题目"""
         paper_content = "select paper_question from test_paper where id= " + paper_id
         self.cur.execute(paper_content)
@@ -164,21 +167,109 @@ class Database:
             self.cur.execute(sql)
             content = self.cur.fetchall()
             Q.append(content[0])
+        return Q
+
+    # 根据学生的准考证号和抽取到的试题编号汇总学生的信息
+    def student_information(self, student_id, paper_id, test_room, test_number, test_name, test_type):
+
+        """ 判断考生选取的题目是否可选，判断考生是否已经选题
+        """
+        print(paper_id + " " + student_id)
+        self.cur.execute("select paper_flag from test_paper where id = " + paper_id)
+        is_choose_message = self.cur.fetchall()
+        print(is_choose_message)
+        if is_choose_message[0]['paper_flag'] == 1:
+            return None
+
+        self.cur.execute("select test_paper1, test_paper2 from test_student where test_id = '" + student_id + "'")
+        is_student_choose_message = self.cur.fetchall()
+        print(is_student_choose_message)
+
+        """ 根据考生抽取到的题号更新考生表
+            如果sql语句中的条件值是变量，变量要定义成str类型，在sql语句中用'"+s+"'表示
+            更新题目的状态
+        """
+        if is_student_choose_message[0]['test_paper1'] != 0:
+            if is_student_choose_message[0]['test_paper2'] != 0:
+                return None
+            else:
+                update = "update test_student set test_paper2 = '" + paper_id + "', test_room = '" \
+                         + test_room + "', test_number = '" + test_number + "' where test_id='" + student_id + "' "
+        else:
+            update = "update test_student set test_paper1 = '" + paper_id + "', test_room = '" \
+                     + test_room + "', test_number = '" + test_number + "' where test_id='" + student_id + "' "
+        self.cur.execute(update)
+        self.con.commit()
+
+        paper_update = "update test_paper set paper_flag = 1 where id = " + paper_id
+        self.cur.execute(paper_update)
+        self.con.commit()
+
+        Q = self.paper_list_everyone(paper_id)
 
         # 将选题信息写入word文档
-
-        print(Q)
-
-        print(Q[0]['question_content'])
         doxManagement = DoxManagement()
         doxManagement.born_word(test_name, test_type, test_number,
                                 Q[0]['question_content'], Q[1]['question_content'], Q[2]['question_content'],
                                 Q[3]['question_content'], Q[4]['question_content'],
                                 student_id)
+        gevent.spawn(copy_current_request_context(doxManagement.born_pdf(student_id)))
         return Q
 
+    # 获得所有题目的状态信息
     def paper_list_information(self):
         sql = "select id, paper_flag from test_paper"
+        self.cur.execute(sql)
+        content = self.cur.fetchall()
+        return content
+
+    # 获得所有题目列表
+    def get_paper_question(self, start, size, count):
+        if count is None:
+            sql = 'select a.id, a.paper_flag, a.question1, a.question2, a.question3, a.question4, a.question5,' \
+                  ' b.question_content as content_1, b.question_code as code_1,' \
+                  ' c.question_content as content_2, c.question_code as code_2,' \
+                  ' d.question_content as content_3, d.question_code as code_3,' \
+                  ' e.question_content as content_4, e.question_code as code_4,' \
+                  ' f.question_content as content_5, f.question_code as code_5' \
+                  ' from (select test_paper.id, test_paper.paper_flag, ' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 1), ";", -1) as question1,' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 2), ";", -1) as question2,' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 3), ";", -1) as question3,' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 4), ";", -1) as question4,' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 5), ";", -1) as question5' \
+                  '       from test_paper) as a' \
+                  '  left join test_question as b on question1 = b.id' \
+                  '  left join test_question as c on question2 = c.id' \
+                  '  left join test_question as d on question3 = d.id' \
+                  '  left join test_question as e on question4 = e.id' \
+                  '  left join test_question as f on question5 = f.id' \
+                  '  limit %s, %s' % (start, size)
+        else:
+            sql = 'select count(a.id) as number' \
+                  ' from (select test_paper.id, test_paper.paper_flag, ' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 1), ";", -1) as question1,' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 2), ";", -1) as question2,' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 3), ";", -1) as question3,' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 4), ";", -1) as question4,' \
+                  '         substring_index(substring_index(test_paper.paper_question, ";", 5), ";", -1) as question5' \
+                  '       from test_paper) as a' \
+                  '  left join test_question as b on question1 = b.id' \
+                  '  left join test_question as c on question2 = c.id' \
+                  '  left join test_question as d on question3 = d.id' \
+                  '  left join test_question as e on question4 = e.id' \
+                  '  left join test_question as f on question5 = f.id'
+        self.cur.execute(sql)
+        content = self.cur.fetchall()
+        return content
+
+    # 获得题目的信息
+    def get_question_items(self, start, size, count):
+        if count is None:
+            sql = 'select id, question_type, question_code, question_content from test_question limit %s, %s' % (
+            start, size)
+        else:
+            sql = 'select count(id) as number from test_question'
         self.cur.execute(sql)
         content = self.cur.fetchall()
         return content
@@ -189,6 +280,7 @@ class DoxManagement:
     def __init__(self):
         print(platform.system())
         self.path = os.path.abspath('.') + "\static\word"
+        self.pdf = os.path.abspath('.') + "\static\pdf"
         self.template = "test_template.docx"
         self.document_1 = MailMerge(self.template)
 
@@ -207,7 +299,28 @@ class DoxManagement:
             question_4=question_4,
             question_5=question_5
         )
+        # 普通 word 文档生成
         self.document_1.write(self.path + '\paper-' + student_number + '.docx')
+
+    def born_pdf(self, student_number):
+        pythoncom.CoInitialize()
+        in_file = self.path + '\paper-' + student_number + '.docx'
+        out_file = self.pdf + '\paper-' + student_number + '.pdf'
+        print(in_file)
+        print(out_file)
+        # 创建COM对象
+        # try:
+        word = client.DispatchEx("Word.Application")
+        if os.path.exists(out_file):
+            os.remove(out_file)
+        doc = word.Documents.Open(in_file, ReadOnly=1)
+        doc.SaveAs(out_file, FileFormat=17)
+        doc.Close()
+        # return "success"
+        #
+        # # except:
+        # print("something was wrong!")
+        # return "failure"
 
 
 class User(UserMixin):
@@ -274,6 +387,14 @@ def paper_download(paper):
     return current_app.send_static_file("word/paper-" + paper + ".docx")
 
 
+# 查看试卷接口
+@app.route('/download/pdf/<paper>', methods=['GET'])
+@login_required
+def pdf_download(paper):
+    print(paper)
+    return current_app.send_static_file("pdf/paper-" + paper + ".pdf")
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     render_template('404.html'), 404
@@ -330,7 +451,7 @@ def find_tester():
     database = Database()
     results = jsonify({
         "status": 200,
-        "list": database.list_students(tester)
+        "list": database.list_students(tester, None, None)
     })
     return results
 
@@ -387,7 +508,7 @@ def list_student():
     return render_template('list.html')
 
 
-# 获得所有题目的状态信息
+# # 获得所有题目的状态信息
 @app.route('/paper', methods=['GET'])
 @login_required
 def list_paper_message():
@@ -397,6 +518,50 @@ def list_paper_message():
         "lists": database.paper_list_information()
     })
     return results
+
+
+# 添加学生信息
+@app.route('/student', methods=['GET', 'POST', 'PATCH'])
+@login_required
+def student_adding():
+    if request.method == "POST":
+        database = Database()
+
+        student_id = request.form['id']
+        which = request.form['name']
+        student_type = request.form['type']
+
+        status = database.student_adding(student_id, which, student_type)
+        results = jsonify({
+            "status": status,
+        })
+        return results
+    if request.method == "PATCH":
+        data = json.loads(request.form.get("data"))
+        database = Database()
+        results = jsonify({
+            "status": 200,
+            "lists": database.list_students(data['start'], data['size'], None),
+            "number": database.count_students()
+        })
+        return results
+    return render_template('student.html')
+
+
+# 试卷内容的查询
+@app.route('/paper/list', methods=['GET', 'PATCH'])
+@login_required
+def paper_list():
+    if request.method == "PATCH":
+        data = json.loads(request.form.get("data"))
+        database = Database()
+        results = jsonify({
+            "status": 200,
+            "lists": database.get_paper_question(data['start'], data['size'], None),
+            "number": database.get_paper_question(None, None, True)[0]['number']
+        })
+        return results
+    return render_template('paper.html')
 
 
 # 技术人员添加一道题目
@@ -413,6 +578,20 @@ def question_insert():
         })
         return results
     return render_template('add.html')
+
+
+# 获得所有题目的信息
+@app.route('/question/list', methods=["PATCH"])
+@login_required
+def test_question_lists():
+    data = json.loads(request.form.get("data"))
+    database = Database()
+    results = jsonify({
+        "status": 200,
+        "lists": database.get_question_items(data['start'], data['size'], None),
+        "number": database.get_question_items(None, None, True)[0]['number']
+    })
+    return results
 
 
 if __name__ == '__main__':

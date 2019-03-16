@@ -2,15 +2,33 @@
 
 {% block content %}
 
-    <div class="col-xs-8 text-center">
+    <div class="col-xs-12 text-center">
       <div class="bs-example" data-example-id="contextual-table">
           <table class="table table-bordered table-hover table-responsive">
             <thead>
               <tr class="text-center">
-                  <th class="text-center">题目编号</th>
-                  <th class="text-center">题目类型</th>
-                  <th class="text-center">类型编号</th>
-                  <th class="text-center">题目内容</th>
+                  <th class="text-center">序号</th>
+                  <th class="text-center">是否被选</th>
+
+                  <th class="text-center">题号</th>
+                  <th class="text-center">编号</th>
+                  <th class="text-center">翻译</th>
+
+                  <th class="text-center">题号</th>
+                  <th class="text-center">编号</th>
+                  <th class="text-center">题1</th>
+
+                  <th class="text-center">题号</th>
+                  <th class="text-center">编号</th>
+                  <th class="text-center">题2</th>
+
+                  <th class="text-center">题号</th>
+                  <th class="text-center">编号</th>
+                  <th class="text-center">题3</th>
+
+                  <th class="text-center">题号</th>
+                  <th class="text-center">编号</th>
+                  <th class="text-center">题4</th>
               </tr>
             </thead>
             <tbody id="tbody_list">
@@ -21,55 +39,22 @@
 
            </ul>
         </div>
-</div>
-
-    <div class="col-xs-4">
-        <form class="form-horizontal col-md-offset-0" id="test_form" name="login_form">
-          <div class="form-group">
-            <label for="type" class="col-sm-4 control-label">题目类型</label>
-            <div class="col-sm-8">
-              <select class="form-control" id="type" name="type">
-                  <option value="0">第一类</option>
-                  <option value="1">第二类</option>
-                  <option value="2">第三类</option>
-                  <option value="3">第四类</option>
-                  <option value="4">第五类</option>
-                </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="content" class="col-sm-4 control-label">题目内容</label>
-            <div class="col-sm-8">
-                <textarea  class="form-control" id="content" placeholder="题目内容" name="content"></textarea>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="col-sm-offset-4 col-sm-12">
-              <button type="submit" class="btn btn-info" name="choose" id="adding">添加</button>
-            </div>
-          </div>
-        </form>
     </div>
 
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
-
-    {# 左侧展示区 #}
     <script type="text/javascript">
         const tbody = document.getElementById("tbody_list");
         const href_body = document.getElementById("page_list");
-        const page_size = 10;
+        const page_size = 5;
 
         {# 分页链接填充  #}
         function href_insert(sum) {
-            console.log(sum);
             let pages = parseInt((sum + page_size - 1) / page_size);
             let href_str = "";
             href_str += "<li><a href=\"#\">&laquo;</a></li>";
             for (let i = 0; i < pages; i++) {
                 let id_name = "href" + (i + 1);
-                href_str += "<li id = \"" + id_name + "\"><a href=\"#\" onclick = \"get_question_list(" + i + ")\">" + (i + 1) + "</a></li>";
+                href_str += "<li id = \"" + id_name + "\"><a href=\"#\" onclick = \"get_student_list(" + i + ")\">" + (i + 1) + "</a></li>";
             }
             href_str += "<li><a href=\"#\">&raquo;</a></li>";
             href_body.innerHTML = href_str;
@@ -80,18 +65,38 @@
             let tbody_str = "";
             tbody.innerHTML = "";
             for (let i = 0; i < lists.length; i++) {
+                let test_room, paper_flag;
+                paper_flag = (lists[i].paper_flag === 1) ? "已选" : "未选";
+                test_room = (lists[i].test_room == null) ? "" : lists[i].test_room;
                 tbody_str += "<tr class='active'>" +
-                    "       <td>" + lists[i].id + "</td>" +
-                    "       <td>" + lists[i].question_type + "</td>" +
-                    "       <td>" + lists[i].question_code + "</td>" +
-                    "       <td>" + lists[i].question_content + "</td>" +
+                    "       <th scope='row'>" + lists[i].id + "</th>" +
+                    "       <td>" + paper_flag + "</td>" +
+                    "       <td>" + lists[i].question1 + "</td>" +
+                    "       <td>" + lists[i].code_1 + "</td>" +
+                    "       <td>" + lists[i].content_1 + "</td>" +
+
+                    "       <td>" + lists[i].question2 + "</td>" +
+                    "       <td>" + lists[i].code_2 + "</td>" +
+                    "       <td>" + lists[i].content_2 + "</td>" +
+
+                    "       <td>" + lists[i].question3 + "</td>" +
+                    "       <td>" + lists[i].code_3 + "</td>" +
+                    "       <td>" + lists[i].content_3 + "</td>" +
+
+                    "       <td>" + lists[i].question4 + "</td>" +
+                    "       <td>" + lists[i].code_4 + "</td>" +
+                    "       <td>" + lists[i].content_4 + "</td>" +
+
+                    "       <td>" + lists[i].question5 + "</td>" +
+                    "       <td>" + lists[i].code_5 + "</td>" +
+                    "       <td>" + lists[i].content_5 + "</td>" +
                     "   </tr>";
             }
             tbody.innerHTML = tbody_str;
         }
 
-        {# 获得试题列表 #}
-        function get_question_list(list_start) {
+        {# 获得学生列表 #}
+        function get_student_list(list_start) {
             {# 当前按钮设置 #}
             let student_input = {
                 data: JSON.stringify({
@@ -103,11 +108,12 @@
                 //几个参数需要注意一下
                 type: "PATCH",                           //方法类型
                 dataType: "json",                       //预期服务器返回的数据类型
-                url: "/question/list",                          //url
+                url: "/paper/list",                          //url
                 data: student_input,
                 success: function (result) {
                     if (result.status === 200) {
                         lists = result.lists;
+                        console.log(lists);
                         insert_table(lists, lists.length);
                     }
                 },
@@ -128,10 +134,11 @@
                 //几个参数需要注意一下
                 type: "PATCH",                           //方法类型
                 dataType: "json",                       //预期服务器返回的数据类型
-                url: "/question/list",                          //url
+                url: "/paper/list",                          //url
                 data: student_input,
                 success: function (result) {
                     if (result.status === 200) {
+                        console.log(result);
                         href_insert(result.number);
                         insert_table(result.lists);
                     }
@@ -141,28 +148,5 @@
                 }
             });
         }
-    </script>
-
-    {# 右侧添加区 #}
-    <script type="text/javascript">
-        function adding() {
-            $.ajax({
-                //几个参数需要注意一下
-                type: "POST",       //方法类型
-                dataType: "json",   //预期服务器返回的数据类型
-                url: "/insert" ,//url
-                data: $('#test_form').serialize(),
-                success: function (result) {
-                    console.log(result);//打印服务端返回的数据(调试用)
-                    if (result.status === 200) {
-                        alert("插入试题成功！");
-                    }
-                },
-                error : function() {
-                    alert("插入试题失败！");
-                }
-            });
-        }
-        document.getElementById("adding").onclick = adding;
     </script>
 {% endblock %}

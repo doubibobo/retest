@@ -13,12 +13,6 @@
         </div>
         </div>
         <form class="form-horizontal col-md-offset-0" id="test_form" name="test_form">
-          <div class="form-group">
-            <label for="inputEmail3" class="col-sm-4 control-label">考生号</label>
-            <div class="col-sm-8">
-              <input type="text" class="form-control" id="inputEmail3" placeholder="考生号" name="test_number">
-            </div>
-          </div>
 
           <div class="form-group">
             <label for="inputEmail4" class="col-sm-4 control-label">考生姓名</label>
@@ -28,12 +22,22 @@
           </div>
 
           <div class="form-group">
+            <label for="inputEmail3" class="col-sm-4 control-label">考生号</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="inputEmail3" name="test_number">
+
+                </select>
+{#              <input type="text" class="form-control" id="inputEmail3" placeholder="考生号" name="test_number">#}
+            </div>
+          </div>
+
+          <div class="form-group">
             <label for="inputType" class="col-sm-4 control-label">考生类型</label>
             <div class="col-sm-8">
               <select class="form-control" id="inputType" name="test_type">
                   <option value="学硕">学硕</option>
                   <option value="专硕">专硕</option>
-                </select>
+              </select>
             </div>
           </div>
 
@@ -148,11 +152,9 @@
         }
 
         function student_find() {
-            let student_name;
-
             let username_input = {
                 data: JSON.stringify({
-                    "tester" : document.getElementById("inputEmail3").value
+                    "tester" : document.getElementById("inputEmail4").value
                 })
             };
 
@@ -165,12 +167,24 @@
                 success: function (result) {
                     console.log(result);//打印服务端返回的数据(调试用)
                     if (result.status === 200) {
-                        student_name = result.list;
-                        if (student_name[0] !== undefined) {
-                            document.getElementById("inputEmail4").value = student_name[0].test_name;
-                            document.getElementById("inputType").value = student_name[0].test_type;
+                        let student_id = result.list;
+                        let input_email3_str = "";
+                        if (student_id[0] !== undefined) {
+                            for (let i = 0; i < student_id.length; i++) {
+                                input_email3_str += "<option value=\"" + student_id[i]['test_id'] + "\">" + student_id[i]['test_id'] + "</option>\n"
+                            }
+                            document.getElementById("inputEmail3").innerHTML = input_email3_str;
+                            if (student_id.length === 1) {
+                                document.getElementById("inputEmail3").disabled = true;
+                                document.getElementById("inputEmail3").value = student_id[0].test_id;
+                                document.getElementById("inputType").disabled = true;
+                                document.getElementById("inputType").value = student_name[0].test_type;
+                            } else {
+                                document.getElementById("inputType").disabled = false;
+                                document.getElementById("inputEmail3").disabled = false;
+                            }
                         } else {
-                            document.getElementById("inputEmail4").value = "";
+                            document.getElementById("inputEmail3").value = "";
                             document.getElementById("inputType").value = "学硕";
                         }
                     }
@@ -182,7 +196,7 @@
         }
 
         window.onload = function () {
-            document.getElementById("inputEmail3").oninput = student_find;
+            document.getElementById("inputEmail4").oninput = student_find;
             document.getElementById("inputEmail3").onmouseover = test_number_check;
             document.getElementById("inputEmail4").onmouseover = test_name_check;
             document.getElementById("inputEmail5").onmouseover = paper_number_check;
@@ -199,10 +213,6 @@
                         let danger_class = "btn btn-danger col-xs-12";
                         let success_class = "btn btn-success col-xs-12";
 
-                        console.log(result);
-                        console.log(result.lists.length);
-                        console.log("进行到这里了");
-
                         {# 填充右侧题目区域 #}
                         let count = 1;
                         for (let i = 1; count <= result.lists.length; i++) {
@@ -216,20 +226,15 @@
                                } else {
                                    str += "<button type='button' class='" + success_class + "' id='paper_number" + number + "' value='" + number + "'>第" + number + "套</button>";
                                }
-                               console.log("number = " + number);
                                str += "</td>";
                                count++;
                            }
                            str += "   </tr>";
                         }
                         tbody.innerHTML = str;
-                        console.log("进行到这里了");
                         {# 设置右侧按钮的onclick事件，根据点击的按钮填入input信息 #}
                         for (let i = 1; i <= result.lists.length; i++) {
-                            console.log("i = " + i);
                             let paper_number_value = document.getElementById("paper_number" + result.lists[i-1].id).value;
-                            console.log(document.getElementById("paper_number" + result.lists[i-1].id));
-                            console.log("paper_number_value = " + paper_number_value);
                             document.getElementById("paper_number" + i).onclick = function () {
                                 document.getElementById("inputEmail5").value = paper_number_value;
                             };
@@ -296,17 +301,9 @@
         document.getElementById("left_high_input").top = 0;
 
         {# 设置弹出框为隐藏 #}
-
-        {#document.getElementById("alert_div").style.display = "none";#}
         document.getElementById("alert_div").style.visibility = "hidden";
-        document.getElementById("inputEmail4").readonly = true;
-        document.getElementById("inputEmail4").disabled = true;
         document.getElementById("inputEmail5").readonly = true;
         document.getElementById("inputEmail5").disabled = true;
-        document.getElementById("inputType").readonly = true;
-
-        {# 首先根据题目选定状态更改类 #}
-        document.getElementById("inputType").disabled = true;
     </script>
 
 {% endblock %}

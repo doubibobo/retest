@@ -11,15 +11,18 @@
           <table class="table table-bordered table-hover table-responsive">
             <thead>
               <tr class="text-center">
-                <th>序号</th>
-                  <th>考生号</th>
-                  <th>考生姓名</th>
-                  <th>报考类型</th>
-                  <th>考场号</th>
-                  <th>座号</th>
-                  <th>试题编号</th>
-                  <th>选择题目</th>
-                  <th>下载</th>
+                  <th class="text-center">序号</th>
+                  <th class="text-center">考生号</th>
+                  <th class="text-center">考生姓名</th>
+                  <th class="text-center">报考类型</th>
+                  <th class="text-center">考场号</th>
+                  <th class="text-center">座号</th>
+                  <th class="text-center">试题编号（1）</th>
+                  <th class="text-center">选择题目（1）</th>
+                  <th class="text-center">试题编号（2）</th>
+                  <th class="text-center">选择题目（2）</th>
+                  <th class="text-center">下载</th>
+                  <th class="text-center">在线预览</th>
               </tr>
             </thead>
             <tbody id="tbody_list">
@@ -48,31 +51,47 @@
                         let str = "";
                         let count = 0;
                         lists = result.lists;
-                        for (i in lists) {
+                        for (let i = 0; i < lists.length; i++) {
                             count++;
                             let download = "<a href=\"/download/" + lists[i].test_id + "\">" + "下载试卷" + "</a>";
+                            let online_watch = "<a href=\"/download/pdf/" + lists[i].test_id + "\" target = \"_blank\">" + "查看" + "</a>";
 
-                            let paper_question_display, test_paper_display;
-                            test_paper_display = lists[i].test_paper;
-                            paper_question_display = lists[i].paper_question;
-                            if (test_paper_display === 0) {
-                                test_paper_display = "未选题";
-                                download = "<a href=\"#\">" + "未选题" + "</a>"
+                            let paper_question_display1, test_paper_display1, paper_question_display2, test_paper_display2;
+                            test_paper_display1 = lists[i].test_paper1;
+                            paper_question_display1 = lists[i].paper1_question;
+
+                            test_paper_display2 = lists[i].test_paper2;
+                            paper_question_display2 = lists[i].paper2_question;
+
+                            if (test_paper_display1 === 0) {
+                                test_paper_display1 = "未选题";
+                                paper_question_display1 = "未选题";
+                                download = "<a href=\"#\">" + "未选题" + "</a>";
+                                online_watch = "<a href=\"#\">" + "未选题" + "</a>";
                             }
-                            if (paper_question_display === null) {
-                                paper_question_display = "未选题";
-                                download = "<a href=\"#\">" + "未选题" + "</a>"
+                            if (paper_question_display1 === null) {
+                                test_paper_display1 = "未选题";
+                                paper_question_display1 = "未选题";
+                                download = "<a href=\"#\">" + "未选题" + "</a>";
+                                online_watch = "<a href=\"#\">" + "未选题" + "</a>";
+                            }
+                            if (test_paper_display2 === 0) {
+                                test_paper_display2 = "未选题";
+                                paper_question_display2 = "未选题";
                             }
                             str += "<tr class='active'>" +
-                                "       <th scope='row'>" + count + "</th>" +
+                                "       <th scope='row' class='text-center'>" + count + "</th>" +
                                 "       <td>" + lists[i].test_id + "</td>" +
                                 "       <td>" + lists[i].test_name + "</td>" +
                                 "       <td>" + lists[i].test_type + "</td>" +
                                 "       <td>" + lists[i].test_room + "</td>" +
                                 "       <td>" + lists[i].test_number + "</td>" +
-                                "       <td>" + test_paper_display + "</td>" +
-                                "       <td>" + paper_question_display + "</td>" +
+                                "       <td>" + test_paper_display1 + "</td>" +
+                                "       <td>" + paper_question_display1 + "</td>" +
+                                "       <td>" + test_paper_display2 + "</td>" +
+                                "       <td>" + paper_question_display2 + "</td>" +
                                 "       <td>" + download + "</td>" +
+                                "       <td>" + online_watch + "</td>" +
                                 "   </tr>";
                         }
                         tbody.innerHTML = str;
