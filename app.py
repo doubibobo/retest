@@ -42,7 +42,7 @@ login_manager.login_message_category = "info"
 class Database:
     # 初始化配置
     def __init__(self):
-        host = "95.179.160.135"
+        host = "127.0.0.1"
         user = "root"
         password = "Ph!7fz2ayn[EV1Tu"
         db = "test"
