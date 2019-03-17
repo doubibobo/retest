@@ -42,10 +42,10 @@ login_manager.login_message_category = "info"
 class Database:
     # 初始化配置
     def __init__(self):
-        host = "39.108.154.79"
+        host = "45.77.16.234"
         user = "root"
-        password = "SiCong>1"
-        db = "role"
+        password = "Ph!7fz2ayn[EV1Tu"
+        db = "test"
         self.con = pymysql.connect(
             host=host, user=user, password=password, db=db, cursorclass=pymysql.cursors.DictCursor)
         self.cur = self.con.cursor()
@@ -292,8 +292,8 @@ class DoxManagement:
 
     def __init__(self):
         print(platform.system())
-        self.path = os.path.abspath('.') + "\static\word"
-        self.pdf = os.path.abspath('.') + "\static\pdf"
+        self.path = os.path.abspath('.') + "/static/word"
+        self.pdf = os.path.abspath('.') + "/static/pdf"
         self.template = "test_template.docx"
         self.document_1 = MailMerge(self.template)
 
@@ -313,12 +313,12 @@ class DoxManagement:
             question_5=question_5
         )
         # 普通 word 文档生成
-        self.document_1.write(self.path + '\paper-' + student_number + '.docx')
+        self.document_1.write(self.path + '/paper-' + student_number + '.docx')
 
     def born_pdf(self, student_number):
         pythoncom.CoInitialize()
-        in_file = self.path + '\paper-' + student_number + '.docx'
-        out_file = self.pdf + '\paper-' + student_number + '.pdf'
+        in_file = self.path + '/paper-' + student_number + '.docx'
+        out_file = self.pdf + '/paper-' + student_number + '.pdf'
         print(in_file)
         print(out_file)
         # 创建COM对象
