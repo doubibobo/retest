@@ -13,6 +13,7 @@
                   <th class="text-center">报考类型</th>
                   <th class="text-center">考场号</th>
                   <th class="text-center">座号</th>
+                  <th class="text-center">操作</th>
               </tr>
             </thead>
             <tbody id="tbody_list">
@@ -22,6 +23,22 @@
            <ul class="pagination" id = "page_list">
 
            </ul>
+
+          <!-- 模态框（Modal） -->
+          <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content" style="">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="get_student_list(0)">
+                                &times;
+                            </button>
+                            <h4 class="modal-title" id="myModalLabel">
+
+                            </h4>
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal -->
+            </div>
         </div>
     </div>
 
@@ -59,6 +76,7 @@
         </form>
     </div>
 
+
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
     {# 左侧展示区 #}
     <script type="text/javascript">
@@ -73,10 +91,19 @@
             href_str += "<li><a href=\"#\">&laquo;</a></li>";
             for (let i = 0; i < pages; i++) {
                 let id_name = "href" + (i + 1);
-                href_str += "<li id = \"" + id_name + "\"><a href=\"#\" onclick = \"get_student_list(" + i + ")\">" + (i + 1) + "</a></li>";
+                href_str += "<li id = \"" + id_name + "\"><a href=\"#\" onclick = \"href_onclick(" + i + ", " + pages + ")\">" + (i + 1) + "</a></li>";
             }
             href_str += "<li><a href=\"#\">&raquo;</a></li>";
             href_body.innerHTML = href_str;
+            document.getElementById("href1").className = "active";
+        }
+
+        {# 设置分页链接点击事件 #}
+        function href_onclick(page, number) {
+            get_student_list(page);
+            for (let i = 0; i < number; i++) {
+                document.getElementById("href" + (i+1)).className = (i !== page) ? "" : "active";
+            }
         }
 
         {# 表格填充 #}
@@ -87,16 +114,42 @@
                 let test_room, test_number;
                 test_number = (lists[i].test_number == null) ? "" : lists[i].test_number;
                 test_room = (lists[i].test_room == null) ? "" : lists[i].test_room;
-                tbody_str += "<tr class='active'>" +
+                tbody_str += (i % 2 === 0) ? "<tr class='active'>" : "<tr class='warning'>";
+                tbody_str +=
                     "       <th scope='row' class='text-center'>" + (i + 1) + "</th>" +
                     "       <td>" + lists[i].test_id + "</td>" +
                     "       <td>" + lists[i].test_name + "</td>" +
                     "       <td>" + lists[i].test_type + "</td>" +
                     "       <td>" + test_room + "</td>" +
                     "       <td>" + test_number + "</td>" +
+                    "       <td>" + "<a href='javascript:void(0)' onclick='del(" + lists[i].id + ")' data-toggle=\"modal\" data-target=\"#myModal\">删除</a>" + "</td>" +
                     "   </tr>";
             }
             tbody.innerHTML = tbody_str;
+        }
+
+        {# 删除一个学生 #}
+        function del(id) {
+            let modal_dev = document.getElementById("modal-content");
+            let modal_dev_h = document.getElementById("myModalLabel");
+            $.ajax({
+                //几个参数需要注意一下
+                type: "DELETE",                           //方法类型
+                dataType: "json",                       //预期服务器返回的数据类型
+                url: "/student/delete/" + id,                          //url
+                data: {},
+                success: function (result) {
+                    if (result.status === 200) {
+                        modal_dev_h.innerHTML = "删除成功";
+                    } else {
+                        modal_dev_h.innerHTML = "删除失败";
+                    }
+                },
+                error: function () {
+                    modal_dev_h.innerHTML = "删除失败";
+                }
+            });
+            return false;
         }
 
         {# 获得学生列表 #}

@@ -52,6 +52,7 @@
                         let count = 0;
                         lists = result.lists;
                         for (let i = 0; i < lists.length; i++) {
+                            let chose = 1;
                             count++;
                             let download = "<a href=\"/download/" + lists[i].test_id + "\">" + "下载试卷" + "</a>";
                             let online_watch = "<a href=\"/download/pdf/" + lists[i].test_id + "\" target = \"_blank\">" + "查看" + "</a>";
@@ -68,18 +69,21 @@
                                 paper_question_display1 = "未选题";
                                 download = "<a href=\"#\">" + "未选题" + "</a>";
                                 online_watch = "<a href=\"#\">" + "未选题" + "</a>";
+                                chose = 0;
                             }
                             if (paper_question_display1 === null) {
                                 test_paper_display1 = "未选题";
                                 paper_question_display1 = "未选题";
                                 download = "<a href=\"#\">" + "未选题" + "</a>";
                                 online_watch = "<a href=\"#\">" + "未选题" + "</a>";
+                                chose = 0;
                             }
                             if (test_paper_display2 === 0) {
                                 test_paper_display2 = "未选题";
                                 paper_question_display2 = "未选题";
                             }
-                            str += "<tr class='active'>" +
+                            str +=  (chose === 0) ?  "<tr class='danger'>" : "<tr class='success'>";
+                            str +=
                                 "       <th scope='row' class='text-center'>" + count + "</th>" +
                                 "       <td>" + lists[i].test_id + "</td>" +
                                 "       <td>" + lists[i].test_name + "</td>" +

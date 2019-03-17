@@ -7,10 +7,11 @@
           <table class="table table-bordered table-hover table-responsive">
             <thead>
               <tr class="text-center">
-                  <th class="text-center">题目编号</th>
-                  <th class="text-center">题目类型</th>
-                  <th class="text-center">类型编号</th>
-                  <th class="text-center">题目内容</th>
+                  <th class="text-center" style="vertical-align: middle !important;">题目编号</th>
+                  <th class="text-center col-xs-1" style="vertical-align: middle !important;">题目类型</th>
+                  <th class="text-center" style="vertical-align: middle !important;">类型编号</th>
+                  <th class="text-center" style="vertical-align: middle !important;">题目内容</th>
+                  <th class="text-center col-xs-1" style="vertical-align: middle !important;">操作</th>
               </tr>
             </thead>
             <tbody id="tbody_list">
@@ -20,8 +21,25 @@
            <ul class="pagination" id = "page_list">
 
            </ul>
+
+            <!-- 模态框（Modal） -->
+            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content" style="">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="get_question_list(0)">
+                                &times;
+                            </button>
+                            <h4 class="modal-title" id="myModalLabel">
+
+                            </h4>
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal -->
+            </div>
         </div>
-</div>
+
+    </div>
 
     <div class="col-xs-4">
         <form class="form-horizontal col-md-offset-0" id="test_form" name="login_form">
@@ -63,16 +81,24 @@
 
         {# 分页链接填充  #}
         function href_insert(sum) {
-            console.log(sum);
             let pages = parseInt((sum + page_size - 1) / page_size);
             let href_str = "";
             href_str += "<li><a href=\"#\">&laquo;</a></li>";
             for (let i = 0; i < pages; i++) {
                 let id_name = "href" + (i + 1);
-                href_str += "<li id = \"" + id_name + "\"><a href=\"#\" onclick = \"get_question_list(" + i + ")\">" + (i + 1) + "</a></li>";
+                href_str += "<li id = \"" + id_name + "\"><a href=\"#\" onclick = \"href_onclick(" + i + ", " + pages + ")\">" + (i + 1) + "</a></li>";
             }
             href_str += "<li><a href=\"#\">&raquo;</a></li>";
             href_body.innerHTML = href_str;
+            document.getElementById("href1").className = "active";
+        }
+
+        {# 设置分页链接点击事件 #}
+        function href_onclick(page, number) {
+            get_question_list(page);
+            for (let i = 0; i < number; i++) {
+                document.getElementById("href" + (i+1)).className = (i !== page) ? "" : "active";
+            }
         }
 
         {# 表格填充 #}
@@ -80,14 +106,39 @@
             let tbody_str = "";
             tbody.innerHTML = "";
             for (let i = 0; i < lists.length; i++) {
-                tbody_str += "<tr class='active'>" +
+                tbody_str += (i % 2 === 0) ? "<tr class='active'>" : "<tr class='warning'>";
+                tbody_str +=
                     "       <td>" + lists[i].id + "</td>" +
                     "       <td>" + lists[i].question_type + "</td>" +
                     "       <td>" + lists[i].question_code + "</td>" +
                     "       <td>" + lists[i].question_content + "</td>" +
+                    "       <td>" + "<a href='javascript:void(0)' onclick='del(" + lists[i].id + ")' data-toggle=\"modal\" data-target=\"#myModal\">删除</a>" + "</td>" +
                     "   </tr>";
             }
             tbody.innerHTML = tbody_str;
+        }
+
+        {# 删除一个题目 #}
+        function del(id) {
+            let modal_dev_h = document.getElementById("myModalLabel");
+            $.ajax({
+                //几个参数需要注意一下
+                type: "DELETE",                           //方法类型
+                dataType: "json",                       //预期服务器返回的数据类型
+                url: "/question/delete/" + id,                          //url
+                data: {},
+                success: function (result) {
+                    if (result.status === 200) {
+                        modal_dev_h.innerHTML = "删除成功";
+                    } else {
+                        modal_dev_h.innerHTML = "删除失败";
+                    }
+                },
+                error: function () {
+                    modal_dev_h.innerHTML = "删除失败";
+                }
+            });
+            return false;
         }
 
         {# 获得试题列表 #}
@@ -156,6 +207,8 @@
                     console.log(result);//打印服务端返回的数据(调试用)
                     if (result.status === 200) {
                         alert("插入试题成功！");
+                    } else {
+                        alert("请输入完成题目")
                     }
                 },
                 error : function() {

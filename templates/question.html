@@ -12,6 +12,7 @@
           <strong id="message">请填写相关信息</strong>
         </div>
         </div>
+
         <form class="form-horizontal col-md-offset-0" id="test_form" name="test_form">
 
           <div class="form-group">
@@ -85,9 +86,9 @@
           <table class="table table-bordered table-responsive">
             <thead>
               <tr class="text-center">
-                <th>#</th>
+                <th class="text-center" style="vertical-align: middle !important;">#</th>
                   {% for y in range(1,13) %}
-                    <th class="info">{{ y }}</th>
+                    <th class="text-center" style="vertical-align: middle !important;">{{ y }}</th>
                   {% endfor %}
               </tr>
             </thead>
@@ -217,7 +218,7 @@
                         let count = 1;
                         for (let i = 1; count <= result.lists.length; i++) {
                            str += "<tr class='active'>" +
-                                "       <th scope='row'>" + i + "</th>";
+                                "       <th scope='row' style=\"vertical-align: middle !important;\" class='text-center'>" + i + "</th>";
                            for (let j = 1; j <= 12 && count <= result.lists.length; j++) {
                                str += "<td class='info'>";
                                let number = result.lists[(i-1)*12 + j - 1].id;

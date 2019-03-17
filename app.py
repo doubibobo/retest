@@ -56,6 +56,7 @@ class Database:
     def student_adding(self, student_id, name, student_type):
         # 查询该考生是否已经录入，以考生号为准
         select_sql = "select count(id) as number from test_student where test_id = " + student_id
+        result = self.cur.execute(select_sql)
         message = self.cur.fetchall()
         if message[0]['number'] == 1:
             print("重复添加")
@@ -64,6 +65,13 @@ class Database:
         self.cur.execute(sql)
         self.con.commit()
         return 200
+
+    # 删除学生
+    def student_deleting(self, student_id):
+        sql = "delete from test_student where id = " + student_id
+        result = self.cur.execute(sql)
+        self.con.commit()
+        return result
 
     # 查询学生总数
     def count_students(self):
@@ -76,7 +84,7 @@ class Database:
     # 列出学生信息
     def list_students(self, start, size, test_card):
         if test_card is None:
-            sql = "select test_id, test_name, test_type, test_room, test_number from" \
+            sql = "select id, test_id, test_name, test_type, test_room, test_number from" \
                   " test_student order by test_id limit %s, %s" % (start, size)
             print(sql)
         else:
@@ -101,6 +109,13 @@ class Database:
     # 添加题目
     def question_adding(self, content, which):
         sql = "insert into test_question(question_content, question_type) values (\'" + content + '\', ' + which + ")"
+        result = self.cur.execute(sql)
+        self.con.commit()
+        return result
+
+    # 删除题目
+    def question_deleting(self, question_id):
+        sql = "delete from test_question where id = " + question_id
         result = self.cur.execute(sql)
         self.con.commit()
         return result
@@ -267,7 +282,7 @@ class Database:
     def get_question_items(self, start, size, count):
         if count is None:
             sql = 'select id, question_type, question_code, question_content from test_question limit %s, %s' % (
-            start, size)
+                start, size)
         else:
             sql = 'select count(id) as number from test_question'
         self.cur.execute(sql)
@@ -508,7 +523,7 @@ def list_student():
     return render_template('list.html')
 
 
-# # 获得所有题目的状态信息
+# 获得所有题目的状态信息
 @app.route('/paper', methods=['GET'])
 @login_required
 def list_paper_message():
@@ -530,6 +545,9 @@ def student_adding():
         student_id = request.form['id']
         which = request.form['name']
         student_type = request.form['type']
+
+        if student_id == "" or which == "" or student_type == "":
+            return "error"
 
         status = database.student_adding(student_id, which, student_type)
         results = jsonify({
@@ -571,6 +589,8 @@ def question_insert():
     if request.method == "POST":
         content = request.form['content']
         which = request.form['type']
+        if content == "" or which == "":
+            return "error"
         database = Database()
         results = jsonify({
             "status": 200,
@@ -578,6 +598,30 @@ def question_insert():
         })
         return results
     return render_template('add.html')
+
+
+# 题目删除操作
+@app.route('/question/delete/<question_id>', methods=["DELETE"])
+@login_required
+def delete_question(question_id):
+    database = Database()
+    results = jsonify({
+        "status": 200,
+        "lists": database.question_deleting(question_id)
+    })
+    return results
+
+
+# 学生删除操作
+@app.route('/student/delete/<student_id>', methods=["DELETE"])
+@login_required
+def delete_student(student_id):
+    database = Database()
+    results = jsonify({
+        "status": 200,
+        "lists": database.student_deleting(student_id)
+    })
+    return results
 
 
 # 获得所有题目的信息
@@ -596,4 +640,4 @@ def test_question_lists():
 
 if __name__ == '__main__':
     app.debug = app.config['DEBUG']
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=8090)
