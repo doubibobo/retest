@@ -489,7 +489,7 @@ def retest_question():
         test_type = login_message['test_type']
 
         database = Database()
-        result: Optional[List[Union[Tuple, Any]]] = database.student_information(test_number, paper_number, test_room,
+        result = database.student_information(test_number, paper_number, test_room,
                                                                                  test_location,
                                                                                  test_name, test_type)
 
