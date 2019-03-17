@@ -18,6 +18,14 @@
 
             </tbody>
           </table>
+
+           <div class="col-xs-12">
+               <span>当前第</span>
+               <span id="current_page"></span>
+               <span>页</span>
+               <span id="page_summer"></span>
+           </div>
+
            <ul class="pagination" id = "page_list">
 
            </ul>
@@ -27,7 +35,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content" style="">
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="get_question_list(0)">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="get_question_list()">
                                 &times;
                             </button>
                             <h4 class="modal-title" id="myModalLabel">
@@ -41,7 +49,7 @@
 
     </div>
 
-    <div class="col-xs-4">
+    <div class="col-xs-3">
         <form class="form-horizontal col-md-offset-0" id="test_form" name="login_form">
           <div class="form-group">
             <label for="type" class="col-sm-4 control-label">题目类型</label>
@@ -65,7 +73,7 @@
 
           <div class="form-group">
             <div class="col-sm-offset-4 col-sm-12">
-              <button type="submit" class="btn btn-info" name="choose" id="adding">添加</button>
+              <button type="submit" class="btn btn-info col-sm-7" name="choose" id="adding">添加</button>
             </div>
           </div>
         </form>
@@ -99,17 +107,33 @@
             for (let i = 0; i < number; i++) {
                 document.getElementById("href" + (i+1)).className = (i !== page) ? "" : "active";
             }
+            page_information(page, number);
+        }
+        
+        {# 设置链接相关信息 #}
+        function page_information(current, summer) {
+            let current_info = document.getElementById("current_page");
+            let page_summer = document.getElementById("page_summer");
+            current_info.innerText = current+1;
+            page_summer.innerText = "      共" + summer + "页";
         }
 
         {# 表格填充 #}
         function insert_table(lists) {
+            let type_string = {
+                0: "第一类",
+                1: "第二类",
+                2: "第三类",
+                3: "第四类",
+                4: "第五类"
+            };
             let tbody_str = "";
             tbody.innerHTML = "";
             for (let i = 0; i < lists.length; i++) {
                 tbody_str += (i % 2 === 0) ? "<tr class='active'>" : "<tr class='warning'>";
                 tbody_str +=
                     "       <td>" + lists[i].id + "</td>" +
-                    "       <td>" + lists[i].question_type + "</td>" +
+                    "       <td>" + type_string[lists[i].question_type] + "</td>" +
                     "       <td>" + lists[i].question_code + "</td>" +
                     "       <td>" + lists[i].question_content + "</td>" +
                     "       <td>" + "<a href='javascript:void(0)' onclick='del(" + lists[i].id + ")' data-toggle=\"modal\" data-target=\"#myModal\">删除</a>" + "</td>" +
@@ -143,6 +167,9 @@
 
         {# 获得试题列表 #}
         function get_question_list(list_start) {
+            if (list_start == null) {
+                list_start = parseInt(document.getElementById("current_page").innerText) - 1;
+            }
             {# 当前按钮设置 #}
             let student_input = {
                 data: JSON.stringify({
@@ -160,6 +187,7 @@
                     if (result.status === 200) {
                         lists = result.lists;
                         insert_table(lists, lists.length);
+                        page_information(list_start, parseInt((result.number + page_size - 1) / page_size));
                     }
                 },
                 error: function () {
@@ -183,6 +211,7 @@
                 data: student_input,
                 success: function (result) {
                     if (result.status === 200) {
+                        page_information(0, parseInt((result.number + page_size - 1) / page_size));
                         href_insert(result.number);
                         insert_table(result.lists);
                     }

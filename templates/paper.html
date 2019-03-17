@@ -35,6 +35,14 @@
 
             </tbody>
           </table>
+
+            <div class="col-xs-12">
+               <span>当前第</span>
+               <span id="current_page"></span>
+               <span>页</span>
+               <span id="page_summer"></span>
+           </div>
+
            <ul class="pagination" id = "page_list">
 
            </ul>
@@ -68,6 +76,15 @@
             for (let i = 0; i < number; i++) {
                 document.getElementById("href" + (i+1)).className = (i !== page) ? "" : "active";
             }
+            page_information(page, number);
+        }
+
+        {# 设置链接相关信息 #}
+        function page_information(current, summer) {
+            let current_info = document.getElementById("current_page");
+            let page_summer = document.getElementById("page_summer");
+            current_info.innerText = current+1;
+            page_summer.innerText = "      共" + summer + "页";
         }
 
         {# 表格填充 #}
@@ -149,9 +166,9 @@
                 data: student_input,
                 success: function (result) {
                     if (result.status === 200) {
-                        console.log(result);
                         href_insert(result.number);
                         insert_table(result.lists);
+                        page_information(0, parseInt((result.number + page_size - 1) / page_size));
                     }
                 },
                 error: function () {
