@@ -6,8 +6,6 @@ import random
 import pythoncom
 import gevent
 
-from concurrent.futures import ThreadPoolExecutor
-
 from flask import copy_current_request_context
 from flask import Flask
 from flask import render_template, request, current_app, jsonify
