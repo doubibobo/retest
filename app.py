@@ -3,8 +3,9 @@ import platform
 import pymysql
 import json
 import random
+import gevent
 
-from flask import Flask
+from flask import Flask, copy_current_request_context
 from flask import render_template, request, current_app, jsonify
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
@@ -222,7 +223,7 @@ class Database:
                                 Q[0]['question_content'], Q[1]['question_content'], Q[2]['question_content'],
                                 Q[3]['question_content'], Q[4]['question_content'],
                                 student_id)
-        # gevent.spawn(copy_current_request_context(doxManagement.born_pdf(student_id)))
+        gevent.spawn(copy_current_request_context(doxManagement.born_pdf(student_id)))
         return Q
 
     # 获得所有题目的状态信息
@@ -311,25 +312,16 @@ class DoxManagement:
         # 普通 word 文档生成
         self.document_1.write(self.path + '/paper-' + student_number + '.docx')
 
-    # def born_pdf(self, student_number):
-    #     pythoncom.CoInitialize()
-    #     in_file = self.path + '/paper-' + student_number + '.docx'
-    #     out_file = self.pdf + '/paper-' + student_number + '.pdf'
-    #     print(in_file)
-    #     print(out_file)
-    #     # 创建COM对象
-    #     # try:
-    #     word = client.DispatchEx("Word.Application")
-    #     if os.path.exists(out_file):
-    #         os.remove(out_file)
-    #     doc = word.Documents.Open(in_file, ReadOnly=1)
-    #     doc.SaveAs(out_file, FileFormat=17)
-    #     doc.Close()
-    #     # return "success"
-    #     #
-    #     # # except:
-    #     # print("something was wrong!")
-    #     # return "failure"
+    def born_pdf(self, student_number):
+        command = "libreoffice --headless --convert-to pdf --outdir " + self.pdf + " " + self.path + '/paper-' + student_number + '.docx'
+        print(command)
+        try:
+            status = os.system(command)
+            print(status)
+        except:
+            print("libreoffice convert word to pdf is wrong")
+        finally:
+            print("libreoffice convert word to pdf")
 
 
 class User(UserMixin):
