@@ -626,4 +626,8 @@ def test_question_lists():
 
 if __name__ == '__main__':
     app.debug = app.config['DEBUG']
-    app.run(threaded=True, debug=False, host='0.0.0.0', port=80)
+    app.run(threaded=True)
+#    app.run(threaded=True, debug=False, host='0.0.0.0', port=80)
+
+
+
