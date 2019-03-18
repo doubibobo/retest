@@ -452,7 +452,7 @@ def find_tester():
     database = Database()
     results = jsonify({
         "status": 200,
-        "list": database.list_students(tester, None, None)
+        "list": database.list_students(None, None, tester)
     })
     return results
 
@@ -626,4 +626,4 @@ def test_question_lists():
 
 if __name__ == '__main__':
     app.debug = app.config['DEBUG']
-    app.run(debug=True, host='0.0.0.0', port=8090)
+    app.run(threaded=True, debug=False, host='0.0.0.0', port=8090)
