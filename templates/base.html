@@ -22,14 +22,10 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a href="/insert">题目录入</a></li>
-                    <li><a href="/student">考生录入</a></li>
-                    <li><a href="/paper/list">查看试卷</a></li>
                     <li><a href="/question">考生抽题</a></li>
-                    <li><a href="/list">考生选题</a></li>
                     {% if current_user.is_authenticated %}
                         <li><a href="#">欢迎 {{ current_user.get_id() }} </a></li>
-                        <li><a href="#">角色：管理员</a> </li>
+                        <li><a href="#">角色：考生</a> </li>
                         <li><a href="/logout">退出</a></li>
                     {% endif %}
                 </ul>
