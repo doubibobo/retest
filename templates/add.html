@@ -55,11 +55,11 @@
             <label for="type" class="col-sm-4 control-label">题目类型</label>
             <div class="col-sm-8">
               <select class="form-control" id="type" name="type">
-                  <option value="0">第一类</option>
-                  <option value="1">第二类</option>
-                  <option value="2">第三类</option>
-                  <option value="3">第四类</option>
-                  <option value="4">第五类</option>
+                  <option value="0">翻译</option>
+                  <option value="1">食品工程</option>
+                  <option value="2">食品工艺</option>
+                  <option value="3">食品化学</option>
+                  <option value="4">食品微生物</option>
                 </select>
             </div>
           </div>
@@ -121,11 +121,11 @@
         {# 表格填充 #}
         function insert_table(lists) {
             let type_string = {
-                0: "第一类",
-                1: "第二类",
-                2: "第三类",
-                3: "第四类",
-                4: "第五类"
+                0: "翻译",
+                1: "食品工程",
+                2: "食品工艺",
+                3: "食品化学",
+                4: "食品微生物"
             };
             let tbody_str = "";
             tbody.innerHTML = "";

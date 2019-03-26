@@ -12,7 +12,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, cur
 from flask_session import Session
 
 from mailmerge import MailMerge
-from typing import Optional, List, Any, Union, Tuple
 
 app = Flask(__name__)
 
@@ -83,21 +82,27 @@ class Database:
                   " test_student order by test_id limit %s, %s" % (start, size)
             print(sql)
         else:
-            sql = "select test_id, test_type from test_student where test_name = '" + test_card + "\'"
+            sql = "select test_id, test_type, test_room, test_number from test_student where test_name = '" + test_card + "\'"
         self.cur.execute(sql)
         result = self.cur.fetchall()
         return result
 
     # 查看所有考生的选题信息
-    def list_chose(self):
-        self.cur.execute("select test_student.test_id, test_student.test_name, test_student.test_type, "
-                         "test_student.test_room, test_student.test_number, "
-                         "test_student.test_paper1, test_paper.paper_question as paper1_question, "
-                         "test_student.test_paper2, a.paper_question as paper2_question "
-                         "from (select * from test_paper) as a "
-                         "right join test_student on test_paper2 = a.id "
-                         "left join test_paper on test_paper1 = test_paper.id "
-                         "order by test_room asc;")
+    def list_chose(self, test_room):
+        sql = "select test_student.test_id, test_student.test_name, test_student.test_type, " \
+              "test_student.test_room, test_student.test_number," \
+              "test_student.test_paper1, test_paper.paper_question as paper1_question, " \
+              "test_student.test_paper2, a.paper_question as paper2_question " \
+              "from (select * from test_paper) as a " \
+              "right join test_student on test_paper2 = a.id " \
+              "left join test_paper on test_paper1 = test_paper.id "
+        if test_room == "all":
+            sql += "order by test_room asc;"
+            self.cur.execute(sql)
+        else:
+            sql += "where test_student.test_room = '%s' order by test_room asc;" % test_room
+            print(sql)
+            self.cur.execute(sql)
         result = self.cur.fetchall()
         return result
 
@@ -330,11 +335,7 @@ class User(UserMixin):
 
 # 用户记录表
 users = [
-    {'username': 'hzausky001', 'password': 'hzausky001'},
-    {'username': 'hzausky002', 'password': 'hzausky002'},
-    {'username': 'hzausky003', 'password': 'hzausky003'},
-    {'username': 'hzausky004', 'password': 'hzausky004'},
-    {'username': 'hzausky005', 'password': 'hzausky005'}
+    {'username': 'admin', 'password': 'hzau-sky-admin'}
 ]
 
 
@@ -423,11 +424,13 @@ def teacher_login():
                 "status": 200,
                 "message": "登陆成功！"
             })
-        return jsonify({
-            "status": 201,
-            "message": "用户名或密码错误！"
-        })
-    return render_template('login.html')
+        else:
+            return jsonify({
+                "status": 201,
+                "message": "用户名或密码错误！"
+            })
+    else:
+        return render_template('login.html')
 
 
 @app.route('/logout')
@@ -447,7 +450,6 @@ def hello_world():
 @app.route('/find/tester', methods=["POST"])
 @login_required
 def find_tester():
-    print(json.loads(request.form.get("data")))
     tester = json.loads(request.form.get("data"))['tester']
     database = Database()
     results = jsonify({
@@ -480,8 +482,6 @@ def retest_question():
         result = database.student_information(test_number, paper_number, test_room,
                                                                                  test_location,
                                                                                  test_name, test_type)
-
-        print(result)
         if result is None:
             return jsonify({
                 "status": 300,
@@ -500,10 +500,11 @@ def retest_question():
 @login_required
 def list_student():
     if request.method == "POST":
+        test_room = json.loads(request.form.get("data"))['test_room']
         database = Database()
         results = jsonify({
             "status": 200,
-            "lists": database.list_chose()
+            "lists": database.list_chose(test_room)
         })
         return results
     return render_template('list.html')

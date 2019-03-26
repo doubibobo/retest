@@ -23,12 +23,11 @@
           </div>
 
           <div class="form-group">
-            <label for="inputEmail3" class="col-sm-4 control-label">考生号</label>
+            <label for="inputEmail3" class="col-sm-4 control-label">考试编号</label>
             <div class="col-sm-8">
                 <select class="form-control" id="inputEmail3" name="test_number">
 
                 </select>
-{#              <input type="text" class="form-control" id="inputEmail3" placeholder="考生号" name="test_number">#}
             </div>
           </div>
 
@@ -37,7 +36,8 @@
             <div class="col-sm-8">
               <select class="form-control" id="inputType" name="test_type">
                   <option value="学硕">学硕</option>
-                  <option value="专硕">专硕</option>
+                  <option value="工程硕士">工程硕士</option>
+                  <option value="农业硕士">农业硕士</option>
               </select>
             </div>
           </div>
@@ -46,21 +46,20 @@
             <label for="inputPassword3" class="col-sm-4 control-label">考场号</label>
             <div class="col-sm-8">
               <select class="form-control" id="inputPassword3" name="test_room">
-                  <option value="A">A考场</option>
-                  <option value="B">B考场</option>
-                  <option value="C">C考场</option>
-                  <option value="D">D考场</option>
-                  <option value="E">E考场</option>
-                  <option value="F">F考场</option>
-                  <option value="G">G考场</option>
+                  <option value="A">第一组</option>
+                  <option value="B">第二组</option>
+                  <option value="C">第三组</option>
+                  <option value="D">第四组</option>
+                  <option value="E">第五组</option>
+                  <option value="F">第六组</option>
                 </select>
             </div>
           </div>
           <div class="form-group">
-            <label for="inputPassword4" class="col-sm-4 control-label">考场内编号（座号）</label>
+            <label for="inputPassword4" class="col-sm-4 control-label">考场序号</label>
             <div class="col-sm-8">
               <select class="form-control" id="inputPassword4" name="test_location">
-                  {% for x in range(1,30) %}
+                  {% for x in range(1,40) %}
                     <option value="{{ x }}">{{ x }}</option>
                   {% endfor %}
                 </select>
@@ -75,7 +74,7 @@
           </div>
           <div class="form-group">
             <div class="col-sm-offset-4 col-sm-12">
-              <button type="button" class="btn btn-info" name="choose" id="choose">选定题目</button>
+              <button type="button" class="btn btn-info" name="choose" id="choose" data-toggle="modal" data-target="#myModal">选定题目</button>
             </div>
           </div>
         </form>
@@ -96,6 +95,25 @@
             </tbody>
           </table>
         </div>
+
+        <!-- 模态框（Modal） -->
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content" style="">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+
+                        </h4>
+                        <div class="modal-content" id="myModalContent">
+
+                        </div>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal -->
+        </div>
     </div>
 
     {# 表单验证相关信息 #}
@@ -114,8 +132,8 @@
                 alert_div.style.visibility = "visible";
                 return false;
             }
-            if (test_number.value.length < 7 || test_number.value.length > 7) {
-                message.innerHTML  = "考生号长度为11位";
+            if (test_number.value.length < 15 || test_number.value.length > 15) {
+                message.innerHTML  = "考生号长度为15位";
                 alert_div.style.visibility = "visible";
                 return false;
             }
@@ -153,6 +171,16 @@
         }
 
         function student_find() {
+            let rooms = {
+              "A": "第一组",
+              "B": "第二组",
+              "C": "第三组",
+              "D": "第四组",
+              "E": "第五组",
+              "F": "第六组",
+              "null": "未选",
+              "all": "全部考场"
+            };
             let username_input = {
                 data: JSON.stringify({
                     "tester" : document.getElementById("inputEmail4").value
@@ -166,27 +194,34 @@
                 url: "/find/tester" ,//url
                 data: username_input,
                 success: function (result) {
-                    console.log(result);//打印服务端返回的数据(调试用)
                     if (result.status === 200) {
                         let student_id = result.list;
-                        let input_email3_str = "";
+                        let document_test_id = document.getElementById("inputEmail3"), document_test_id_str = "";
+                        let document_test_type = document.getElementById("inputType"), document_test_type_str = "";
+                        let document_test_number = document.getElementById("inputPassword4"), document_test_number_str = "";
+                        let document_test_room = document.getElementById("inputPassword3"), document_test_room_str = "";
                         if (student_id[0] !== undefined) {
                             for (let i = 0; i < student_id.length; i++) {
-                                input_email3_str += "<option value=\"" + student_id[i]['test_id'] + "\">" + student_id[i]['test_id'] + "</option>\n"
+                                document_test_id_str += "<option value=\"" + student_id[i]['test_id'] + "\">" + student_id[i]['test_id'] + "</option>\n";
+                                document_test_room_str += "<option value=\"" + student_id[i]['test_room'] + "\">" + rooms[student_id[i]['test_room']] + "</option>\n";
+                                document_test_type_str += "<option value=\"" + student_id[i]['test_type'] + "\">" + student_id[i]['test_type'] + "</option>\n";
+                                document_test_number_str += "<option value=\"" + student_id[i]['test_number'] + "\">" + student_id[i]['test_number'] + "</option>\n";
                             }
-                            document.getElementById("inputEmail3").innerHTML = input_email3_str;
+                            document_test_id.innerHTML = document_test_id_str;
+                            document_test_room.innerHTML = document_test_room_str;
+                            document_test_number.innerHTML = document_test_number_str;
+                            document_test_type.innerHTML = document_test_type_str;
+
                             if (student_id.length === 1) {
-                                document.getElementById("inputEmail3").disabled = true;
-                                document.getElementById("inputEmail3").value = student_id[0].test_id;
-                                document.getElementById("inputType").disabled = true;
-                                document.getElementById("inputType").value = student_name[0].test_type;
+                                document_test_id.disabled = true;           document_test_type.disabled = true;
+                                document_test_number.disabled = true;       document_test_room.disabled = true;
                             } else {
-                                document.getElementById("inputType").disabled = false;
-                                document.getElementById("inputEmail3").disabled = false;
+                                document_test_id.disabled = false;          document_test_room.disabled = false;
+                                document_test_number.disabled = false;      document_test_type.disabled = false;
                             }
                         } else {
-                            document.getElementById("inputEmail3").value = "";
-                            document.getElementById("inputType").value = "学硕";
+                            document_test_id.value = "";                    document_test_type.value = "";
+                            document_test_room.value = "";                  document_test_number.value = "";
                         }
                     }
                 },
@@ -264,6 +299,8 @@
                 })
             };
 
+            let modal_dev_h = document.getElementById("myModalLabel");
+
             $.ajax({
                 type: "POST",
                 dataType: "json",                  //服务器返回的数据类型
@@ -271,16 +308,13 @@
                 data: choose_input,
                 success: function (result) {
                     if (result.status === 200) {
-                        {#window.open("localhost:5000/download/" + document.getElementById("inputEmail3").value, "_blank");#}
-                        alert("选题成功！");
-                        console.log(result.lists);
-                        window.location.href = "/question";
+                        modal_dev_h.innerHTML = "选题成功！            " + "<a href=\"/download/" + document.getElementById("inputEmail3").value + "\">" + "下载试卷" + "</a>";
                     } else {
-                        alert(result.error)
+                        modal_dev_h.innerHTML = result.error;
                     }
                 },
                 error : function() {
-                    alert("选题失败");
+                    modal_dev_h.innerHTML = "选题失败！";
                 }
            });
         }

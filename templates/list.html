@@ -2,8 +2,21 @@
 
 {% block content %}
 
-    <div class="col-xs-12 page-header">
-      <h2 class="col-xs-2 col-xs-offset-5">学生选题列表</h2>
+    <div class="col-xs-12 page-header text-center">
+      <h2>学生选题列表</h2>
+    </div>
+
+    <div class="text-center">
+        <ul class="pagination" id = "page_list">
+            <li><a href="#" onclick = "href_onclick('all')">全部</a></li>
+            <li><a href="#" onclick = "href_onclick('A')">第一组</a></li>
+            <li><a href="#" onclick = "href_onclick('B')">第二组</a></li>
+            <li><a href="#" onclick = "href_onclick('C')">第三组</a></li>
+            <li><a href="#" onclick = "href_onclick('D')">第四组</a></li>
+            <li><a href="#" onclick = "href_onclick('E')">第五组</a></li>
+            <li><a href="#" onclick = "href_onclick('F')">第六组</a></li>
+            <li><span id="current_room"></span></li>
+        </ul>
     </div>
 
     <div class="col-xs-10 col-xs-offset-1 text-center">
@@ -11,12 +24,12 @@
           <table class="table table-bordered table-hover table-responsive">
             <thead>
               <tr class="text-center">
-                  <th class="text-center">序号</th>
-                  <th class="text-center">考生号</th>
+                  <th class="text-center">考生序号</th>
+                  <th class="text-center">考试编号</th>
                   <th class="text-center">考生姓名</th>
                   <th class="text-center">报考类型</th>
-                  <th class="text-center">考场号</th>
-                  <th class="text-center">座号</th>
+                  <th class="text-center">组号</th>
+                  <th class="text-center">组内序号</th>
                   <th class="text-center">试题编号（1）</th>
                   <th class="text-center">选择题目（1）</th>
                   <th class="text-center">试题编号（2）</th>
@@ -35,17 +48,32 @@
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
     <script type="text/javascript">
+        let rooms = {
+          "A": "第一组",
+          "B": "第二组",
+          "C": "第三组",
+          "D": "第四组",
+          "E": "第五组",
+          "F": "第六组",
+          "null": "未选",
+          "all": "全部考场"
+        };
         var lists;
         var tbody = document.getElementById("tbody_list");
-        window.onload = function () {
+
+        function href_onclick(test_room) {
+            document.getElementById("current_room").innerText = "当前考场: " + rooms[test_room];
+            let test_room_input = {
+                data: JSON.stringify({
+                    "test_room" : test_room
+                })
+            };
             $.ajax({
                 //几个参数需要注意一下
                 type: "POST",                           //方法类型
                 dataType: "json",                       //预期服务器返回的数据类型
                 url: "/list" ,                          //url
-                data: {
-
-                },
+                data: test_room_input,
                 success: function (result) {
                     if (result.status === 200) {
                         let str = "";
@@ -86,13 +114,13 @@
                             str +=
                                 "       <th scope='row' class='text-center'>" + count + "</th>" +
                                 "       <td>" + lists[i].test_id + "</td>" +
-                                "       <td>" + lists[i].test_name + "</td>" +
+                                "       <td> <strong>" + lists[i].test_name + "</strong> </td>" +
                                 "       <td>" + lists[i].test_type + "</td>" +
-                                "       <td>" + lists[i].test_room + "</td>" +
-                                "       <td>" + lists[i].test_number + "</td>" +
-                                "       <td>" + test_paper_display1 + "</td>" +
+                                "       <td>" + rooms[lists[i].test_room] + "</td>" +
+                                "       <td> <strong>" + lists[i].test_number + "</strong> </td>" +
+                                "       <td> <strong>" + test_paper_display1 + "</strong> </td>" +
                                 "       <td>" + paper_question_display1 + "</td>" +
-                                "       <td>" + test_paper_display2 + "</td>" +
+                                "       <td> <strong>" + test_paper_display2 + " </strong> </td>" +
                                 "       <td>" + paper_question_display2 + "</td>" +
                                 "       <td>" + download + "</td>" +
                                 "       <td>" + online_watch + "</td>" +
@@ -105,9 +133,12 @@
                     }
                 },
                 error : function() {
-                    alert("登陆失败！");
+                    alert("查询失败！");
                 }
             });
+        }
+        window.onload = function () {
+            href_onclick("all");
         }
     </script>
 
