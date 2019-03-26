@@ -35,7 +35,7 @@
                 data: $('#login_form').serialize(),
                 success: function (result) {
                     if (result.status === 200) {
-                        window.location.href = "question";
+                        window.location.href = "list";
                     } else {
                         {# 用户名或者密码错误 #}
                         alert(result.message)

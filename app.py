@@ -335,7 +335,15 @@ class User(UserMixin):
 
 # 用户记录表
 users = [
-    {'username': 'admin', 'password': 'hzau-sky-admin'}
+    {'username': 'mishu001', 'password': 'hzau-sky-mishu-001'},
+    {'username': 'mishu002', 'password': 'hzau-sky-mishu-002'},
+    {'username': 'mishu003', 'password': 'hzau-sky-mishu-003'},
+    {'username': 'mishu004', 'password': 'hzau-sky-mishu-004'},
+    {'username': 'mishu005', 'password': 'hzau-sky-mishu-005'},
+    {'username': 'mishu006', 'password': 'hzau-sky-mishu-006'},
+    {'username': 'mishu007', 'password': 'hzau-sky-mishu-007'},
+    {'username': 'mishu008', 'password': 'hzau-sky-mishu-008'},
+    {'username': 'mishu009', 'password': 'hzau-sky-mishu-009'}
 ]
 
 
